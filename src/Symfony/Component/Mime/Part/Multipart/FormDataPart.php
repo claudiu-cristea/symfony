@@ -60,11 +60,21 @@ final class FormDataPart extends AbstractMultipartPart
         $prepare = function ($item, $key, $root = null) use (&$values, &$prepare) {
             if (\is_int($key) && \is_array($item)) {
                 if (1 !== \count($item)) {
-                    throw new InvalidArgumentException(sprintf('Form field values with integer keys can only have one array element, the key being the field name and the value being the field value, %d provided.', \count($item)));
+                    if ($root === null) {
+                        throw new InvalidArgumentException(sprintf('Form field values with integer keys can only have one array element, the key being the field name and the value being the field value, %d provided.', \count($item)));
+                    }
+                    // Form field values with integer keys on a nested level are
+                    // converted into an array of values with string keys.
+                    $items = [];
+                    foreach ($item as $itemKey => $itemValue) {
+                        $items["$key][$itemKey"] = $itemValue;
+                    }
+                    array_walk($items, $prepare, $root);
+                    return;
+                } else {
+                    $key = key($item);
+                    $item = $item[$key];
                 }
-
-                $key = key($item);
-                $item = $item[$key];
             }
 
             $fieldName = null !== $root ? sprintf('%s[%s]', $root, $key) : $key;
