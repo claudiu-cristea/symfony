@@ -164,7 +164,7 @@ class FormDataPartTest extends TestCase
         $this->assertEquals($parts, $f->getParts());
     }
 
-    public function testExceptionOnFormFieldsWithIntegerKeysAndMultipleValues()
+    public function testExceptionOnFormFieldsWithIntegerKeysOnFirstLevelAndMultipleValues()
     {
         $p1 = new TextPart('content', 'utf-8', 'plain', '8bit');
         $f = new FormDataPart([
@@ -178,6 +178,26 @@ class FormDataPartTest extends TestCase
         $this->expectExceptionMessage('Form field values with integer keys can only have one array element, the key being the field name and the value being the field value, 2 provided.');
 
         $f->getParts();
+    }
+
+    public function testFormFieldsWithIntegerKeysOnNestedLevelsAndMultipleValues()
+    {
+        $p1 = new TextPart('foo content', 'utf-8', 'plain', '8bit');
+        $p2 = new TextPart('bar content', 'utf-8', 'plain', '8bit');
+        $f = new FormDataPart([
+            'qux' => [[
+                'foo' => clone $p1,
+                'bar' => clone $p2,
+            ]],
+        ]);
+
+
+        $parts = [
+            (clone $p1)->setName('qux[0][foo]')->setDisposition('form-data'),
+            (clone $p2)->setName('qux[0][bar]')->setDisposition('form-data'),
+        ];
+
+        $this->assertEquals($parts, $f->getParts());
     }
 
     public function testToString()
